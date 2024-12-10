@@ -1,5 +1,5 @@
 import streamlit as st
-from real_time_scheduling import Task, rm_schedule, dm_schedule, fcfs_schedule, sjf_schedule, create_gantt_chart
+from real_time_scheduling import Task, rm_schedule, dm_schedule, fcfs_schedule, sjf_schedule, edf_schedule, create_gantt_chart
 
 def main():
     st.title("Real-Time Scheduling Simulator")
@@ -7,7 +7,7 @@ def main():
     
     algorithm = st.radio(
         "Choose scheduling algorithm:",
-        ["Rate Monotonic (RM)", "Deadline Monotonic (DM)", "First Come First Served (FCFS)", "Shortest Job First (SJF)"]
+        ["First Come First Served (FCFS)", "Shortest Job First (SJF)", "Rate Monotonic (RM)", "Deadline Monotonic (DM)", "Earliest Deadline First (EDF)"]
     )
     
     st.markdown("### Input Task Parameters")
@@ -42,6 +42,9 @@ def main():
         elif algorithm == "Shortest Job First (SJF)":
             timeline = sjf_schedule(task_data, simulation_time)
             title = "Shortest Job First Scheduling"
+        elif algorithm == "Earliest Deadline First (EDF)":
+            timeline = edf_schedule(task_data, simulation_time)
+            title = "Earliest Deadline First Scheduling"
         else:
             timeline = fcfs_schedule(task_data, simulation_time)
             title = "First Come First Served Scheduling"
