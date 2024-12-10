@@ -9,6 +9,8 @@ class Task:
         self.arrival_time = arrival_time
         self.remaining_time = execution_time
         self.next_release = arrival_time
+        self.laxity = 0  # Initialize laxity attribute
+
 
 def rm_schedule(tasks, simulation_time):
     timeline = []
@@ -154,6 +156,41 @@ def edf_schedule(tasks, simulation_time):
     return timeline
 
 
+def llf_schedule(tasks, simulation_time):
+    timeline = []
+    current_time = 0
+    ready_queue = []
+    
+    while current_time < simulation_time:
+        # Check for task releases
+        for task in tasks:
+            if current_time >= task.arrival_time and current_time >= task.next_release:
+                ready_queue.append(task)
+                task.next_release += task.period
+        
+        # Calculate laxity for each task
+        for task in ready_queue:
+            task.laxity = task.deadline - current_time - task.remaining_time
+        
+        # Sort by laxity (least laxity = higher priority)
+        ready_queue.sort(key=lambda x: x.laxity)
+        
+        if ready_queue:
+            current_task = ready_queue[0]
+            timeline.append((current_task.id, current_time, current_time + 1))
+            current_task.remaining_time -= 1
+            
+            if current_task.remaining_time <= 0:
+                ready_queue.pop(0)
+                current_task.remaining_time = current_task.execution_time
+        else:
+            timeline.append(("Idle", current_time, current_time + 1))
+        
+        current_time += 1
+    
+    return timeline
+
+
 def create_gantt_chart(timeline, tasks, title):
     fig = go.Figure()
     colors = ['blue', 'orange', 'green', 'red', 'purple', 'cyan', 'magenta', 'yellow', 'pink', 'brown']
@@ -199,13 +236,16 @@ if __name__ == '__main__':
     timeline_fcfs = fcfs_schedule(tasks, simulation_time)
     timeline_sjf = sjf_schedule(tasks, simulation_time)
     timeline_edf = edf_schedule(tasks, simulation_time)
+    timeline_llf = llf_schedule(tasks, simulation_time)
     fig_rm = create_gantt_chart(timeline_rm, tasks, 'Rate Monotonic Scheduling')
     fig_dm = create_gantt_chart(timeline_dm, tasks, 'Deadline Monotonic Scheduling')
     fig_fcfs = create_gantt_chart(timeline_fcfs, tasks, 'First Come First Served Scheduling')
     fig_sjf = create_gantt_chart(timeline_sjf, tasks, 'Shortest Job First Scheduling')
     fig_edf = create_gantt_chart(timeline_edf, tasks, 'Earliest Deadline First Scheduling')
+    fig_llf = create_gantt_chart(timeline_llf, tasks, 'Least Laxity First Scheduling')
     fig_rm.show()
     fig_dm.show()
     fig_fcfs.show()
     fig_sjf.show()
     fig_edf.show()
+    fig_llf.show()
