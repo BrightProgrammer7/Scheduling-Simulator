@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduling Simulator</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Real-Time Scheduling Simulator</h1>
+        <form id="scheduleForm" class="mt-4">
+            <div class="form-group">
+                <label for="algorithm">Select Scheduling Algorithm:</label>
+                <select class="form-control" id="algorithm" name="algorithm">
+                    <option>First Come First Served (FCFS)</option>
+                    <option>Shortest Job First (SJF)</option>
+                    <option>Rate Monotonic (RM)</option>
+                    <option>Deadline Monotonic (DM)</option>
+                    <option>Earliest Deadline First (EDF)</option>
+                    <option>Least Laxity First (LLF)</option>
+                </select>
+            </div>
+            <div id="tasksContainer">
+                <h4>Task Parameters</h4>
+                <div class="task" id="task_1">
+                    <h5>Task 1</h5>
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label for="period_1">Period</label>
+                            <input type="number" class="form-control" id="period_1" name="period_1" min="1" value="5">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label for="exec_1">Execution Time</label>
+                            <input type="number" class="form-control" id="exec_1" name="exec_1" min="1" value="2">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label for="deadline_1">Deadline</label>
+                            <input type="number" class="form-control" id="deadline_1" name="deadline_1" min="1" value="5">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label for="arrival_1">Arrival Time</label>
+                            <input type="number" class="form-control" id="arrival_1" name="arrival_1" min="0" value="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn btn-secondary" id="addTask">Add Task</button>
+            <div class="form-group mt-3">
+                <label for="simulation_time">Simulation Duration</label>
+                <input type="number" class="form-control" id="simulation_time" name="simulation_time" min="1" value="20">
+            </div>
+            <button type="submit" class="btn btn-primary">Run Simulation</button>
+        </form>
+        <div id="ganttChart" class="mt-5"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            let taskCount = 1;
+
+            $('#addTask').click(function() {
+                taskCount++;
+                const taskHtml = `
+                    <div class="task" id="task_${taskCount}">
+                        <h5>Task ${taskCount}</h5>
+                        <div class="form-row">
+                            <div class="form-group col-md-3">
+                                <label for="period_${taskCount}">Period</label>
+                                <input type="number" class="form-control" id="period_${taskCount}" name="period_${taskCount}" min="1" value="5">
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="exec_${taskCount}">Execution Time</label>
+                                <input type="number" class="form-control" id="exec_${taskCount}" name="exec_${taskCount}" min="1" value="2">
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="deadline_${taskCount}">Deadline</label>
+                                <input type="number" class="form-control" id="deadline_${taskCount}" name="deadline_${taskCount}" min="1" value="5">
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="arrival_${taskCount}">Arrival Time</label>
+                                <input type="number" class="form-control" id="arrival_${taskCount}" name="arrival_${taskCount}" min="0" value="0">
+                            </div>
+                        </div>
+                    </div>`;
+                $('#tasksContainer').append(taskHtml);
+            });
+
+            $('#scheduleForm').submit(function(event) {
+                event.preventDefault();
+
+                const tasks = [];
+                $('.task').each(function(index, element) {
+                    const taskId = index + 1;
+                    tasks.push({
+                        id: taskId,
+                        period: parseInt($(`#period_${taskId}`).val()),
+                        execution_time: parseInt($(`#exec_${taskId}`).val()),
+                        deadline: parseInt($(`#deadline_${taskId}`).val()),
+                        arrival_time: parseInt($(`#arrival_${taskId}`).val())
+                    });
+                });
+
+                const data = {
+                    algorithm: $('#algorithm').val(),
+                    tasks: tasks,
+                    simulation_time: parseInt($('#simulation_time').val())
+                };
+
+                $.ajax({
+                    url: '/schedule',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    success: function(response) {
+                        const chartData = JSON.parse(response.gantt_chart);
+                        Plotly.newPlot('ganttChart', chartData.data, chartData.layout);
+                    },
+                    error: function(error) {
+                        console.error('Error:', error);
+                        alert('An error occurred while processing your request.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
